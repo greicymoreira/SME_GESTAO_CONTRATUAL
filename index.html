@@ -41,6 +41,50 @@ select,input{width:100%;background:transparent;border:0;color:var(--ink);font-we
 .view{display:none} .view.active{display:block}
 .layoutExec{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:14px}
 #map{height:calc(100vh - 333px);min-height:560px;background:#e9eef4}
+  #map{
+  position:relative;
+}
+
+.map-legend{
+  position:absolute;
+  right:16px;
+  bottom:16px;
+  z-index:999;
+  background:rgba(13,27,47,.94);
+  border:1px solid rgba(109,165,216,.35);
+  border-radius:16px;
+  padding:12px 14px;
+  box-shadow:0 16px 38px rgba(0,0,0,.35);
+  color:#eaf3ff;
+  font-size:12px;
+  line-height:1.7;
+}
+
+.legend-title{
+  font-weight:900;
+  margin-bottom:6px;
+  color:#fff;
+}
+
+.legend-dot{
+  display:inline-block;
+  width:11px;
+  height:11px;
+  border-radius:50%;
+  margin-right:7px;
+  border:1px solid rgba(255,255,255,.75);
+}
+
+.legend-dot.low{background:#5c8f88;}
+.legend-dot.mid{background:#2f6ea5;}
+.legend-dot.high{background:#d96b2b;}
+
+.legend-note{
+  margin-top:6px;
+  color:#a8b8cf;
+  font-size:11px;
+  max-width:210px;
+}
 .side{display:flex;flex-direction:column;gap:14px}
 .insight{padding:18px}.insight p{margin:10px 0 0;color:#30445d;line-height:1.45}
 .ranking{padding:12px 14px}.rank{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:11px 0;border-bottom:1px solid rgba(16,32,51,.08)}.rank:last-child{border-bottom:0}.rank b{font-size:13px;overflow:hidden;text-overflow:ellipsis}.rank small{color:#6b7c90}
@@ -117,7 +161,15 @@ body{background:var(--bg)!important;color:var(--ink)!important}.header{backgroun
     <section class="layoutExec">
       <section class="panel">
         <div class="panelHead"><div><h2>Distribuição territorial das escolas</h2><div class="hint">Mapa operacional com concentração, pontos georreferenciados e detalhamento por unidade.</div></div><span class="badge" id="countBadge">Carregando...</span></div>
-        <div id="map"></div>
+        <div id="map">
+  <div class="map-legend">
+    <div class="legend-title">Legenda do mapa</div>
+    <div><span class="legend-dot low"></span> Baixa concentração / menor valor</div>
+    <div><span class="legend-dot mid"></span> Concentração intermediária</div>
+    <div><span class="legend-dot high"></span> Alta concentração / maior valor</div>
+    <div class="legend-note">As cores variam conforme a métrica selecionada.</div>
+  </div>
+</div>
       </section>
       <aside class="side">
         <section class="panel insight"><h3>Leitura executiva</h3><p id="insightText">Carregando análise...</p></section>
@@ -232,7 +284,28 @@ function renderMap(rows){
       <b>Gerência</b><span>${escapeHtml(r.gerencia)}</span><b>CRE</b><span>${escapeHtml(r.cre)}</span><b>Bairro</b><span>${escapeHtml(r.bairro)}</span>
       <b>Endereço</b><span>${escapeHtml(r.endereco||'-')}</span><b>Postos</b><span>${int(r.postos)}</span><b>Área</b><span>${int(r.area)} m²</span><b>Valor mensal</b><span>${money(r.valor_mensal)}</span></div>
       <div class="popupActions"><button onclick="filterBy('escola','${escapeHtml(String(r.escola||'')).replace(/'/g,'&#39;')}')">Filtrar escola</button><button onclick="setView('analitico')">Ver analítico</button></div>`;
-    L.circleMarker([r.lat,r.lng],{radius,fillColor:c,color:'#ffffff',weight:1.3,opacity:.95,fillOpacity:.82}).bindPopup(popup,{maxWidth:360}).addTo(markers);
+const marker = L.circleMarker([r.lat,r.lng],{
+  radius,
+  fillColor:c,
+  color:'#ffffff',
+  weight:1.8,
+  opacity:1,
+  fillOpacity:.88,
+  bubblingMouseEvents:false
+}).addTo(markers);
+
+marker.bindPopup(popup,{
+  maxWidth:360,
+  closeButton:true,
+  autoPan:true,
+  keepInView:true,
+  autoClose:false,
+  closeOnClick:false
+});
+
+marker.on('click', function(){
+  this.openPopup();
+});
   });
   if(geo.length) map.fitBounds(L.latLngBounds(geo.map(r=>[r.lat,r.lng])),{padding:[36,36],maxZoom:13});
   $('countBadge').textContent=`${int(geo.length)} pontos georreferenciados`;
